@@ -63,36 +63,32 @@ def format_table(rows: List[Dict]) -> str:
 
     headers = ["Country", "Capital", "Population", "Region", "Currency", "Languages"]
     header_keys = [h.lower() for h in headers]
-
-    # Calculate column widths
-    widths = [len(h) for h in headers]
-    for row in rows:
-        if "_error" not in row:
-            for i, key in enumerate(header_keys):
-                widths[i] = max(widths[i], len(str(row.get(key, ""))))
-
-    # Build table
-    lines = []
-    header_line = " | ".join(h.ljust(w) for h, w in zip(headers, widths))
-    lines.append(header_line)
-    lines.append("-" * len(header_line))
-
+    
+    lines = [" | ".join(headers)]
+    lines.append("-" * 80)
+    
     for row in rows:
         if "_error" in row:
-            error = row["_error"]
-            country = row.get("country", "Unknown")
-            if error == "timeout":
-                lines.append(f"[TIMEOUT] {country} - Request timed out")
-            elif error == "not_found":
-                lines.append(f"[NOT FOUND] {country} - Country not found")
-            elif error == "parse":
-                lines.append(f"[ERROR] {country} - Failed to parse data")
+            error_line = format_error_row(row)
+            lines.append(error_line)
         else:
-            values = [str(row.get(key, "")) for key in header_keys]
-            line = " | ".join(v.ljust(w) for v, w in zip(values, widths))
-            lines.append(line)
-
+            values = [str(row.get(key, "N/A")) for key in header_keys]
+            lines.append(" | ".join(values))
+    
     return "\n".join(lines)
+
+
+def format_error_row(row: Dict) -> str:
+    error = row["_error"]
+    country = row.get("country", "Unknown")
+    
+    messages = {
+        "timeout": "[TIMEOUT]",
+        "not_found": "[NOT FOUND]",
+        "parse": "[ERROR]",
+    }
+    prefix = messages.get(error, "[ERROR]")
+    return f"{prefix} {country}"
 
 
 def main():
